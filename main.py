@@ -5,6 +5,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
 from sklearn.model_selection import train_test_split, ShuffleSplit
 from sklearn.naive_bayes import MultinomialNB
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Set global styles for plots
 sns.set_style(style='white')
@@ -31,7 +33,7 @@ def print_accuracy():
     print("\nAverage Confusion Matrix across folds: \n {}".format(sum(cms) / len(cms)))
 
 
-df = pd.read_csv('datagt/glassdoor_v3.csv', nrows=1000)
+df = pd.read_csv('datagt/glassdoor_v3.csv', nrows=10000)
 
 positive_pros = df.loc[df.Rating_overall.isin([4, 5])].Pros.to_frame(name='text')
 positive_pros['sentiment'] = 1
@@ -71,3 +73,31 @@ for train_index, test_index in ss.split(data.text):
     cms.append(confusion_matrix(sentiment_test, sentiment_pred))
 
 print_accuracy()
+
+fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(16,9))
+
+acc_scores = [round(a * 100, 1) for a in accs]
+f1_scores = [round(f * 100, 2) for f in f1s]
+
+x1 = np.arange(len(acc_scores))
+x2 = np.arange(len(f1_scores))
+
+ax1.bar(x1, acc_scores)
+ax2.bar(x2, f1_scores, color='#559ebf')
+
+# Place values on top of bars
+for i, v in enumerate(list(zip(acc_scores, f1_scores))):
+    ax1.text(i - 0.25, v[0] + 2, str(v[0]) + '%')
+    ax2.text(i - 0.25, v[1] + 2, str(v[1]))
+
+ax1.set_ylabel('Accuracy (%)')
+ax1.set_title('Naive Bayes')
+ax1.set_ylim([0, 100])
+
+ax2.set_ylabel('F1 Score')
+ax2.set_xlabel('Runs')
+ax2.set_ylim([0, 100])
+
+sns.despine(bottom=True, left=True)  # Remove the ticks on axes for cleaner presentation
+
+plt.show()
