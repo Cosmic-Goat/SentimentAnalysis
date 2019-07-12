@@ -44,7 +44,7 @@ class CleanText(BaseEstimator, TransformerMixin):
         # Make sure there are no empty entries left
         empty_clean = clean_X == ''
         print('{} records have no words left after text cleaning'.format(clean_X[empty_clean].count()))
-        clean_X.loc[empty_clean] = '[no_text]'
+        clean_X.loc[''] = '[no_text]'
 
         print(clean_X.sample(5))
 
