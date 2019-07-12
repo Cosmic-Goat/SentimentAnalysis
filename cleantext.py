@@ -40,4 +40,12 @@ class CleanText(BaseEstimator, TransformerMixin):
 
     def transform(self, X, **transform_params):
         clean_X = X.apply(self.remove_punctuation).apply(self.remove_digits).apply(self.to_lower).apply(self.remove_stopwords).apply(self.stemming)
+
+        # Make sure there are no empty entries left
+        empty_clean = clean_X == ''
+        print('{} records have no words left after text cleaning'.format(clean_X[empty_clean].count()))
+        clean_X.loc[empty_clean] = '[no_text]'
+
+        print(clean_X.sample(5))
+
         return clean_X
