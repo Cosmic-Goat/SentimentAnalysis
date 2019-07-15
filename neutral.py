@@ -50,7 +50,7 @@ def word_frequency(clean_text):
 
 np.random.seed(37)
 
-df = pd.read_csv('datagt/glassdoor_v3.csv', nrows=50)
+df = pd.read_csv('datagt/glassdoor_v3.csv', nrows=1000)
 df = df.reindex(np.random.permutation(df.index))
 df_model = convert(df)
 
@@ -58,9 +58,9 @@ x_train, x_test, y_train, y_test = train_test_split(df_model.drop('rating', axis
 
 # Parameter grid settings for the vectorizers (Count and TFIDF)
 parameters_vect = {
-    'ct__vect__max_df': (0.25, 0.5, 0.75),
-    'ct__vect__ngram_range': ((1, 1), (1, 2)),
-    'ct__vect__min_df': (0.01, 0.02)
+    'mv__max_df': (0.25, 0.5, 0.75),
+    'mv__ngram_range': ((1, 1), (1, 2)),
+    'mv__min_df': (0.01, 0.02)
 }
 
 # Parameter grid settings for MultinomialNB
@@ -77,7 +77,7 @@ parameters_logreg = {
 mnb = MultinomialNB()
 logreg = LogisticRegression()
 
-tfidfvect = TfidfVectorizer()
+tfidfvect = TfidfVectorizer(max_df=0.75, min_df=1, ngram_range=(1,1))
 # MultinomialNB
 best_mnb_countvect = grid_vect(mnb, parameters_mnb, x_train, x_test, y_train, y_test, parameters_text=parameters_vect, vect=tfidfvect)
 joblib.dump(best_mnb_countvect, './output/best_mnb_tfidfvect.pkl')

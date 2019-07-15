@@ -3,27 +3,57 @@ from time import time
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer, make_column_transformer
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline, FeatureUnion
 
 
-class ColumnExtractor(TransformerMixin, BaseEstimator):
-    def __init__(self, cols):
-        self.cols = cols
+class MultiColVectoriser(TransformerMixin, BaseEstimator):
+    def __init__(self, ngram_range=(1, 1), max_df=1.0, min_df=1):
+        self.cols = ['pros_clean', 'cons_clean']
+        self.vect = CountVectorizer()
+        self.vect.max_df, self.vect.min_df, self.vect.ngram_range = max_df, min_df, ngram_range
+        self.mk_ct = make_column_transformer(
+            *[(self.vect, col) for col in self.cols]
+        )
 
-    def transform(self, X, **transform_params):
-        return X[self.cols]
+    @property
+    def max_df(self):
+        return self.vect.max_df
 
-    def fit(self, X, y=None, **fit_params):
-        return self
+    @max_df.setter
+    def max_df(self, max_df):
+        self.vect.max_df = max_df
+
+    @property
+    def min_df(self):
+        return self.vect.min_df
+
+    @min_df.setter
+    def min_df(self, min_df):
+        self.vect.min_df = min_df
+
+    @property
+    def ngram_range(self):
+        return self.vect.ngram_range
+
+    @ngram_range.setter
+    def ngram_range(self, ngram_range):
+        self.vect.ngram_range = ngram_range
+
+    def transform(self, x, **transform_params):
+        return self.mk_ct.transform(x)
+
+    def fit(self, x, y=None, **fit_params):
+        return self.mk_ct.fit(x, y)
 
 
 def grid_vect(clf, parameters_clf, x_train, x_test, y_train, y_test, parameters_text=None, vect=None):
-    ct = ColumnTransformer([('vect', vect, ['cons_clean', 'pros_clean'])], remainder='passthrough')
+    multicol_vect = MultiColVectoriser()
 
     pipeline = Pipeline([
-        ('ct', ct)
+        ('mv', multicol_vect)
         , ('clf', clf)
     ])
 
