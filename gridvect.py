@@ -1,18 +1,19 @@
 from pprint import pprint
 from time import time
 
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.compose import ColumnTransformer, make_column_transformer
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.compose import make_column_transformer
 from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV
-from sklearn.pipeline import Pipeline, FeatureUnion
 
 
 class MultiColVectoriser(TransformerMixin, BaseEstimator):
-    def __init__(self, ngram_range=(1, 1), max_df=1.0, min_df=1):
-        self.cols = ['pros_clean', 'cons_clean']
-        self.vect = CountVectorizer()
+    def __init__(self, cols, vect, ngram_range=(1, 1), max_df=1.0, min_df=1):
+        self.cols = cols
+        self.vect = vect
+        self.vect = vect
         self.vect.max_df, self.vect.min_df, self.vect.ngram_range = max_df, min_df, ngram_range
         self.mk_ct = make_column_transformer(
             *[(self.vect, col) for col in self.cols]
@@ -49,12 +50,12 @@ class MultiColVectoriser(TransformerMixin, BaseEstimator):
         return self.mk_ct.fit(x, y)
 
 
-def grid_vect(clf, parameters_clf, x_train, x_test, y_train, y_test, parameters_text=None, vect=None):
-    multicol_vect = MultiColVectoriser()
+def grid_vect(clf, parameters_clf, x_train, x_test, y_train, y_test, text_cols, parameters_text=None, vect=None):
 
     pipeline = Pipeline([
-        ('mv', multicol_vect)
-        , ('clf', clf)
+        ('mv', MultiColVectoriser(text_cols, vect)),
+        ('smote', SMOTE()),
+        ('clf', clf)
     ])
 
     print(pipeline.get_params().keys)

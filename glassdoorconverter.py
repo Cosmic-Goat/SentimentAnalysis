@@ -3,6 +3,7 @@ import pandas as pd
 
 from cleantext import CleanText
 
+
 def convert(df):
     to_return = pd.DataFrame()
     to_return["recommends"] = df.Recommends.replace({'Recommends': 1, "Doesn't Recommend": -1, None: 0})

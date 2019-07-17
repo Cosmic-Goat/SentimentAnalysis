@@ -38,14 +38,14 @@ class CleanText(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None, **fit_params):
         return self
 
-    def transform(self, X, **transform_params):
-        clean_X = X.apply(self.remove_punctuation).apply(self.remove_digits).apply(self.to_lower).apply(self.remove_stopwords).apply(self.stemming)
+    def transform(self, x, **transform_params):
+        x = x.fillna('')
+        clean_x = x.apply(lambda s: s.apply(self.remove_punctuation).apply(self.remove_digits).apply(self.to_lower).apply(self.remove_stopwords).apply(self.stemming), axis=1)
 
         # Make sure there are no empty entries left
-        empty_clean = clean_X == ''
-        print('{} records have no words left after text cleaning'.format(clean_X[empty_clean].count()))
-        clean_X.loc[''] = '[no_text]'
+        empty_clean = clean_x == ''
+        print('This many records have no words left after text cleaning:\n{}'.format(clean_x[empty_clean].count()))
+        #clean_x.loc[''] = '[no_text]'
 
-        print(clean_X.sample(5))
-
-        return clean_X
+        print(clean_x.sample(5))
+        return clean_x
