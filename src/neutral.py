@@ -39,13 +39,15 @@ def word_frequency(clean_text):
 
 
 np.random.seed(37)
-text_cols = ['Review_starttext']
+text_cols = ['Review_starttext', 'Pros', 'Cons']
 y_axis = 'Rating_overall'
 
-df = pd.read_csv('data/indeed_v2.csv', nrows=3000)
-df = df.reindex(np.random.permutation(df.index))
-df_data = df[[*text_cols, y_axis]]
-df_data[y_axis] = df_data[y_axis].replace([1, 2, 3, 4, 5], [-1, -1, 0, 1, 1])
+df = pd.read_csv('data/indeed_v2.csv')  # , nrows=30000
+df_data = df[[*text_cols, y_axis]]  # Remove unused data
+df_data = df_data.dropna()  # Remove rows with empty text
+df_data = df_data.reindex(np.random.permutation(df_data.index))
+df_data[y_axis] = df_data[y_axis].replace([1, 2, 3, 4, 5], [-1, -1, 0, 1, 1])  # Replace ratings with classifier classes
+df_data = df_data[:20000]  # Limit to first N entries, only for quick testing.
 
 # Preprocessing, this shouldn't be done in the grid search
 preprocess = make_column_transformer((CleanText(), text_cols), remainder='passthrough')
