@@ -2,3 +2,5 @@ datagt/
 .idea/
 
 __pycache__/
+
+data/
