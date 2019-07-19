@@ -18,6 +18,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.pipeline import make_pipeline
+
 import warnings
 
 warnings.filterwarnings('ignore')
@@ -44,7 +47,7 @@ def show_features(estimator, cols, class_names=None, amount=10):
 	if class_names is None:
 		class_names = ['Negative', 'Neutral', 'Positive']
 	best_mk_ct = estimator.best_estimator_.steps[0][1].mk_ct
-	best_clf = estimator.best_estimator_.steps[2][1]
+	best_clf = estimator.best_estimator_.steps[1][1]
 
 	feature_names = [re.sub('^.{0,16}', '', name) for name in best_mk_ct.get_feature_names()]
 	feature_count = best_clf.coef_
@@ -79,7 +82,7 @@ df_data = df[[*text_cols, y_axis]]  # Remove unused data
 df_data = df_data.dropna()  # Remove rows with empty text
 df_data = df_data.reindex(np.random.permutation(df_data.index))
 df_data[y_axis] = df_data[y_axis].replace([1, 2, 3, 4, 5], [-1, -1, 0, 1, 1])  # Replace ratings with classifier classes
-df_data = df_data[:10000]  # Limit to first N entries, only for quick testing.
+df_data = df_data[:3000]  # Limit to first N entries, only for quick testing.
 
 # Preprocessing, this shouldn't be done in the grid search
 preprocess = make_column_transformer((CleanText(), text_cols), remainder='passthrough')
@@ -92,13 +95,16 @@ df_processed = pd.DataFrame(data=df_processed,  # values
 
 x_train, x_test, y_train, y_test = train_test_split(df_processed.drop(y_axis, axis=1), df_processed[y_axis],
 													test_size=0.2, random_state=37)
+y_train = np.asarray(y_train, dtype='int64')
+rus = RandomUnderSampler(random_state=0)
+x_train, y_train = rus.fit_resample(x_train, y_train)
+x_train = pd.DataFrame(x_train, columns=text_cols)
 
 # Parameter grid settings for the vectorizers (Count and TFIDF)
 parameters_vect = {
 	'mv__max_df': (0.25, 0.5, 0.75),
 	'mv__ngram_range': ((1, 2), (1, 3)),
-	'mv__min_df': (0.01, 0.02),
-    'mv__max_features': (None, 1000)
+	'mv__min_df': (0.01, 0.02)
 }
 
 # Parameter grid settings for MultinomialNB
@@ -108,8 +114,8 @@ parameters_mnb = {
 
 # Parameter grid settings for LogisticRegression
 parameters_logreg = {
-	'clf__C': (0.25, 0.5, 1.0)
-	#'clf__penalty': ('l1', 'l2')
+	'clf__C': (0.25, 0.5, 1.0),
+	'clf__penalty': ('l1', 'l2')
 }
 
 mnb = MultinomialNB()

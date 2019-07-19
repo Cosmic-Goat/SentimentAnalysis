@@ -1,7 +1,6 @@
 from pprint import pprint
 from time import time
 import numpy as np
-from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import make_column_transformer
@@ -72,7 +71,6 @@ def grid_vect(clf, parameters_clf, x_train, x_test, y_train, y_test, text_cols, 
 
     pipeline = Pipeline([
         ('mv', MultiColVectoriser(text_cols, vect)),
-        ('smote', SMOTE()),
         ('clf', clf)
     ])
 
