@@ -82,14 +82,24 @@ parameters_logreg = {
 mnb = MultinomialNB()
 logreg = LogisticRegression()
 
-vect = CountVectorizer()
+vect = TfidfVectorizer()
 
 # MultinomialNB
-best_mnb_countvect = grid_vect(mnb, parameters_mnb, x_train, x_test, y_train, y_test, text_cols, parameters_text=parameters_vect, vect=vect)
+best_mnb_countvect = grid_vect(mnb, parameters_mnb, x_train, x_test, y_train, y_test, text_cols,
+                               parameters_text=parameters_vect, vect=vect)
 # joblib.dump(best_mnb_countvect, './output/best_mnb_tfidfvect.pkl')
 # LogisticRegression
-# best_logreg_countvect = grid_vect(logreg, parameters_logreg, x_train, x_test, y_train, y_test, text_cols, parameters_text=parameters_vect, vect=tfidfvect)
+# best_logreg_countvect = grid_vect(logreg, parameters_logreg, x_train, x_test, y_train, y_test, text_cols, parameters_text=parameters_vect, vect=vect)
 # joblib.dump(best_logreg_countvect, './output/best_logreg_countvect.pkl')
 
 con_matrix = confusion_matrix(np.asarray(y_test, dtype='int64'), best_mnb_countvect.predict(x_test))
-pretty_plot_confusion_matrix(pd.DataFrame(con_matrix))
+pretty_plot_confusion_matrix(pd.DataFrame(con_matrix, columns=['negative', 'neutral', 'positive']))
+
+# TODO: Use transformer names or 'final estimator' to make this more decoupled.
+best_mk_ct = best_mnb_countvect.best_estimator_.steps[0][1].mk_ct
+best_clf = best_mnb_countvect.best_estimator_.steps[2][1]
+
+feature_names = best_mk_ct.get_feature_names()
+feature_count = best_clf.feature_count_
+features_df = pd.DataFrame(list(zip(feature_names, *feature_count)),
+                           columns=['Name', 'Negative', 'Neutral', 'Positive'])
