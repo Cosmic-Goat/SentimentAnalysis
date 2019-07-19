@@ -47,15 +47,15 @@ def show_features(estimator, class_names=None):
 	best_clf = estimator.best_estimator_.steps[2][1]
 
 	feature_names = [re.sub('^.{0,16}', '', name) for name in best_mk_ct.get_feature_names()]
-	feature_count = best_clf.feature_count_
+	feature_count = best_clf.coef_
 	features_df = pd.DataFrame(list(zip(feature_names, *feature_count)), columns=['Name', *class_names])
 	#features_df = features_df.sort_values('Positive')
 	#sns.heatmap(features_df.drop('Name', axis=1)[-10:], cbar=False, yticklabels=features_df.Name[-10:])
 	#plt.show()
 
 	for clazz in class_names:
-		fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(16, 9))
-		class_features = features_df.sort_values(clazz)[::-1]
+		#fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(16, 9))
+		class_features = features_df.reindex(features_df[clazz].abs().sort_values()[::-1].index)
 		plt.figure(figsize=(12, 5))
 		sns.barplot(x=class_features.Name[:10], y=class_features[clazz][:10])
 		plt.show()
@@ -70,7 +70,7 @@ df_data = df[[*text_cols, y_axis]]  # Remove unused data
 df_data = df_data.dropna()  # Remove rows with empty text
 df_data = df_data.reindex(np.random.permutation(df_data.index))
 df_data[y_axis] = df_data[y_axis].replace([1, 2, 3, 4, 5], [-1, -1, 0, 1, 1])  # Replace ratings with classifier classes
-df_data = df_data[:100000]  # Limit to first N entries, only for quick testing.
+df_data = df_data[:1000]  # Limit to first N entries, only for quick testing.
 
 # Preprocessing, this shouldn't be done in the grid search
 preprocess = make_column_transformer((CleanText(), text_cols), remainder='passthrough')
