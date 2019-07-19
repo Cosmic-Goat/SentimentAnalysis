@@ -24,7 +24,7 @@ warnings.filterwarnings('ignore')
 pd.set_option('display.max_colwidth', -1)
 
 
-# sns.set(style="darkgrid")
+sns.set(style="whitegrid")
 # sns.set(font_scale=1.3)
 
 
@@ -39,7 +39,7 @@ def word_frequency(clean_text):
 	plt.show()
 
 
-def show_features(estimator, class_names=None):
+def show_features(estimator, cols, class_names=None, amount=10):
 	# TODO: Use transformer names or 'final estimator' to make this more decoupled.
 	if class_names is None:
 		class_names = ['Negative', 'Neutral', 'Positive']
@@ -54,10 +54,19 @@ def show_features(estimator, class_names=None):
 	#plt.show()
 
 	for clazz in class_names:
-		#fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(16, 9))
+		num_of_cols = len(cols)
+		fig, axs = plt.subplots(num_of_cols, 1, figsize=(16, 15))
+		fig.suptitle(clazz, fontsize=16)
 		class_features = features_df.reindex(features_df[clazz].abs().sort_values()[::-1].index)
-		plt.figure(figsize=(12, 5))
-		sns.barplot(x=class_features.Name[:10], y=class_features[clazz][:10])
+		for col in range(num_of_cols):
+			x = class_features.Name[class_features.Name.str.startswith(str(col+1))]
+			x = x.replace(f'{col+1}__', '', regex=True)[:amount]
+			x = x.rename('')
+			y = class_features[class_features.index.isin(x.index)][clazz]
+			y = y.rename(cols[col])
+			sns.barplot(x=x, y=y, ax=axs[col])
+		plt.subplots_adjust(top=4)
+		plt.autoscale()
 		plt.show()
 
 
@@ -70,7 +79,7 @@ df_data = df[[*text_cols, y_axis]]  # Remove unused data
 df_data = df_data.dropna()  # Remove rows with empty text
 df_data = df_data.reindex(np.random.permutation(df_data.index))
 df_data[y_axis] = df_data[y_axis].replace([1, 2, 3, 4, 5], [-1, -1, 0, 1, 1])  # Replace ratings with classifier classes
-df_data = df_data[:1000]  # Limit to first N entries, only for quick testing.
+df_data = df_data[:10000]  # Limit to first N entries, only for quick testing.
 
 # Preprocessing, this shouldn't be done in the grid search
 preprocess = make_column_transformer((CleanText(), text_cols), remainder='passthrough')
@@ -87,8 +96,9 @@ x_train, x_test, y_train, y_test = train_test_split(df_processed.drop(y_axis, ax
 # Parameter grid settings for the vectorizers (Count and TFIDF)
 parameters_vect = {
 	'mv__max_df': (0.25, 0.5, 0.75),
-	'mv__ngram_range': ((1, 1), (1, 2)),
-	'mv__min_df': (0.01, 0.02)
+	'mv__ngram_range': ((1, 2), (1, 3)),
+	'mv__min_df': (0.01, 0.02),
+    'mv__max_features': (None, 1000)
 }
 
 # Parameter grid settings for MultinomialNB
@@ -98,23 +108,23 @@ parameters_mnb = {
 
 # Parameter grid settings for LogisticRegression
 parameters_logreg = {
-	'clf__C': (0.25, 0.5, 1.0),
-	'clf__penalty': ('l1', 'l2')
+	'clf__C': (0.25, 0.5, 1.0)
+	#'clf__penalty': ('l1', 'l2')
 }
 
 mnb = MultinomialNB()
 logreg = LogisticRegression()
 
-vect = TfidfVectorizer()
+vect = CountVectorizer()
 
 # MultinomialNB
 #best_mnb_countvect = grid_vect(mnb, parameters_mnb, x_train, x_test, y_train, y_test, text_cols, parameters_text=parameters_vect, vect=vect)
 # joblib.dump(best_mnb_countvect, './output/best_mnb_tfidfvect.pkl')
 # LogisticRegression
-best_logreg_countvect = grid_vect(logreg, parameters_logreg, x_train, x_test, y_train, y_test, text_cols, parameters_text=parameters_vect, vect=vect)
+best_logreg = grid_vect(logreg, parameters_logreg, x_train, x_test, y_train, y_test, text_cols, parameters_text=parameters_vect, vect=vect)
 # joblib.dump(best_logreg_countvect, './output/best_logreg_countvect.pkl')
 
-con_matrix = confusion_matrix(np.asarray(y_test, dtype='int64'), best_logreg_countvect.predict(x_test))
+con_matrix = confusion_matrix(np.asarray(y_test, dtype='int64'), best_logreg.predict(x_test))
 pretty_plot_confusion_matrix(pd.DataFrame(con_matrix, columns=['negative', 'neutral', 'positive']))
 
-show_features(best_logreg_countvect)
+show_features(best_logreg, text_cols)
