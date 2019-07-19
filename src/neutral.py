@@ -108,14 +108,13 @@ logreg = LogisticRegression()
 vect = TfidfVectorizer()
 
 # MultinomialNB
-best_mnb_countvect = grid_vect(mnb, parameters_mnb, x_train, x_test, y_train, y_test, text_cols,
-							   parameters_text=parameters_vect, vect=vect)
+#best_mnb_countvect = grid_vect(mnb, parameters_mnb, x_train, x_test, y_train, y_test, text_cols, parameters_text=parameters_vect, vect=vect)
 # joblib.dump(best_mnb_countvect, './output/best_mnb_tfidfvect.pkl')
 # LogisticRegression
-# best_logreg_countvect = grid_vect(logreg, parameters_logreg, x_train, x_test, y_train, y_test, text_cols, parameters_text=parameters_vect, vect=vect)
+best_logreg_countvect = grid_vect(logreg, parameters_logreg, x_train, x_test, y_train, y_test, text_cols, parameters_text=parameters_vect, vect=vect)
 # joblib.dump(best_logreg_countvect, './output/best_logreg_countvect.pkl')
 
-con_matrix = confusion_matrix(np.asarray(y_test, dtype='int64'), best_mnb_countvect.predict(x_test))
+con_matrix = confusion_matrix(np.asarray(y_test, dtype='int64'), best_logreg_countvect.predict(x_test))
 pretty_plot_confusion_matrix(pd.DataFrame(con_matrix, columns=['negative', 'neutral', 'positive']))
 
-show_features(best_mnb_countvect)
+show_features(best_logreg_countvect)
